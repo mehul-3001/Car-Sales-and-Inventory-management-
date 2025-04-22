@@ -1,2 +1,88 @@
-# Car-Sales-and-Inventory-management-
-This is an online car and car parts store that has listings of various cars along with their features. It also consists of car parts and accessories. The project allows users to buy car and car inventory online. It allows users to check various car stats including car engine, milage, tank capacity and other factors. Credit card payment facility available for car parts. Car booking has other methods for booking and registration and even a test drive registration.
+// PopoutWindow.tsx
+import React, { useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+
+interface PopoutWindowProps {
+  onClose?: () => void;
+  children: React.ReactNode;
+  title?: string;
+  width?: number;
+  height?: number;
+}
+
+const PopoutWindow: React.FC<PopoutWindowProps> = ({
+  onClose,
+  children,
+  title = 'Popout',
+  width = 600,
+  height = 400,
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const externalWindow = useRef<Window | null>(null);
+
+  useEffect(() => {
+    containerRef.current = document.createElement('div');
+    const left = window.screenX + 100;
+    const top = window.screenY + 100;
+
+    externalWindow.current = window.open(
+      '',
+      '',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    if (!externalWindow.current) return;
+
+    externalWindow.current.document.title = title;
+    externalWindow.current.document.body.appendChild(containerRef.current);
+
+    const currentWindow = externalWindow.current;
+
+    const handleUnload = () => {
+      onClose?.();
+    };
+
+    currentWindow.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      currentWindow.removeEventListener('beforeunload', handleUnload);
+      currentWindow.close();
+    };
+  }, []);
+
+  return containerRef.current
+    ? ReactDOM.createPortal(children, containerRef.current)
+    : null;
+};
+
+export default PopoutWindow;
+
+import React, { useState } from 'react';
+import PopoutWindow from './PopoutWindow';
+
+const App = () => {
+  const [showPopout, setShowPopout] = useState(false);
+
+  const handleAction = () => {
+    alert('Function in main window was triggered!');
+  };
+
+  return (
+    <div>
+      <button onClick={() => setShowPopout(true)}>Open Popout</button>
+
+      {showPopout && (
+        <PopoutWindow onClose={() => setShowPopout(false)} title="My Popout">
+          <MyComponent onDoSomething={handleAction} />
+        </PopoutWindow>
+      )}
+    </div>
+  );
+};
+
+const MyComponent = ({ onDoSomething }: { onDoSomething: () => void }) => (
+  <div>
+    <h2>This is a popout component</h2>
+    <button onClick={onDoSomething}>Trigger Main Window Function</button>
+  </div>
+);
