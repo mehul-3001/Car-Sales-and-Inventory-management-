@@ -1,3 +1,5 @@
+`width=${screenWidth},height=${screenHeight},top=0,left=0,toolbar=no,menubar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+
 // PopoutWindow.tsx
 import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
