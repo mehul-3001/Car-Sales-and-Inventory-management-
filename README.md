@@ -1,6 +1,30 @@
-`width=${screenWidth},height=${screenHeight},top=0,left=0,toolbar=no,menubar=no,location=no,status=no,resizable=yes,scrollbars=yes`
 
+// === Copy all styles ===
+    const headElements = document.head.querySelectorAll('link[rel="stylesheet"], style');
+    headElements.forEach((node) => {
+      extWin.document.head.appendChild(node.cloneNode(true));
+    });
+
+    setIsReady(true);
+
+// Copy styles from main document to new window
+Array.from(document.styleSheets).forEach((styleSheet) => {
+  try {
+    const rules = styleSheet.cssRules;
+    const newStyleEl = externalWindow.current!.document.createElement('style');
+    for (let i = 0; i < rules.length; i++) {
+      newStyleEl.appendChild(document.createTextNode(rules[i].cssText));
+    }
+    externalWindow.current!.document.head.appendChild(newStyleEl);
+  } catch (e) {
+    // May throw security error for cross-origin stylesheets
+    console.warn('Could not copy styles:', e);
+  }
+});
 // PopoutWindow.tsx
+
+
+
 import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
