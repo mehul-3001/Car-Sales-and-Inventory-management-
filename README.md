@@ -1,105 +1,110 @@
-// Copy styles from main document to new window
-Array.from(document.styleSheets).forEach((styleSheet) => {
-  try {
-    const rules = styleSheet.cssRules;
-    const newStyleEl = externalWindow.current!.document.createElement('style');
-    for (let i = 0; i < rules.length; i++) {
-      newStyleEl.appendChild(document.createTextNode(rules[i].cssText));
-    }
-    externalWindow.current!.document.head.appendChild(newStyleEl);
-  } catch (e) {
-    // May throw security error for cross-origin stylesheets
-    console.warn('Could not copy styles:', e);
-  }
-});
-// PopoutWindow.tsx
+<div class="container" id="container">
+  <div class="section" id="section-1">
+    Section 1 <button onclick="showPreview('section-1')">Show Preview</button>
+  </div>
+  <div class="section" id="section-2">
+    Section 2 <button onclick="showPreview('section-2')">Show Preview</button>
+  </div>
+  <div class="section" id="section-3">
+    Section 3 <button onclick="showPreview('section-3')">Show Preview</button>
+  </div>
+  <div class="section" id="section-4">
+    Section 4
+  </div>
+</div>
 
-
-
-import React, { useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-
-interface PopoutWindowProps {
-  onClose?: () => void;
-  children: React.ReactNode;
-  title?: string;
-  width?: number;
-  height?: number;
+<div class="preview" id="preview-box">
+  <button class="close-preview" onclick="hidePreview()">×</button>
+  <div class="preview-content">Preview Content</div>
+</div>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
 }
 
-const PopoutWindow: React.FC<PopoutWindowProps> = ({
-  onClose,
-  children,
-  title = 'Popout',
-  width = 600,
-  height = 400,
-}) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const externalWindow = useRef<Window | null>(null);
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  position: relative;
+}
 
-  useEffect(() => {
-    containerRef.current = document.createElement('div');
-    const left = window.screenX + 100;
-    const top = window.screenY + 100;
+.section {
+  background: #f9f9f9;
+  padding: 20px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  position: relative;
+}
 
-    externalWindow.current = window.open(
-      '',
-      '',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
+.preview {
+  position: absolute;
+  width: 40%;
+  background: #d0e6ff;
+  border: 1px solid #90caff;
+  border-radius: 4px;
+  padding: 20px;
+  box-sizing: border-box;
+  display: none;
+  z-index: 10;
+}
 
-    if (!externalWindow.current) return;
+.close-preview {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
 
-    externalWindow.current.document.title = title;
-    externalWindow.current.document.body.appendChild(containerRef.current);
+/* ✅ Mobile: show preview stacked below */
+@media (max-width: 768px) {
+  .preview {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+function showPreview(sectionId) {
+  const section = document.getElementById(sectionId);
+  const preview = document.getElementById('preview-box');
+  const container = document.getElementById('container');
+  const allSections = Array.from(document.querySelectorAll('.section'));
 
-    const currentWindow = externalWindow.current;
+  const sectionRect = section.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
 
-    const handleUnload = () => {
-      onClose?.();
-    };
+  // Compute top offset (accounting for scroll)
+  const topOffset = sectionRect.top - containerRect.top + window.scrollY;
 
-    currentWindow.addEventListener('beforeunload', handleUnload);
+  // Compute preview height (3 sections)
+  const index = allSections.indexOf(section);
+  let height = 0;
+  for (let i = index; i < index + 3 && i < allSections.length; i++) {
+    height += allSections[i].offsetHeight + 10; // include margin
+  }
 
-    return () => {
-      currentWindow.removeEventListener('beforeunload', handleUnload);
-      currentWindow.close();
-    };
-  }, []);
+  // Apply styles
+  if (window.innerWidth > 768) {
+    // Desktop layout
+    preview.style.position = 'absolute';
+    preview.style.display = 'block';
+    preview.style.top = `${topOffset}px`;
+    preview.style.left = `${containerRect.left + container.offsetWidth + 20}px`;
+    preview.style.height = `${height}px`;
+  } else {
+    // Mobile: stack below
+    preview.style.position = 'static';
+    preview.style.width = '100%';
+    preview.style.display = 'block';
+    preview.style.height = 'auto';
+  }
+}
 
-  return containerRef.current
-    ? ReactDOM.createPortal(children, containerRef.current)
-    : null;
-};
+function hidePreview() {
+  const preview = document.getElementById('preview-box');
+  preview.style.display = 'none';
+}
 
-export default PopoutWindow;
-
-import React, { useState } from 'react';
-import PopoutWindow from './PopoutWindow';
-
-const App = () => {
-  const [showPopout, setShowPopout] = useState(false);
-
-  const handleAction = () => {
-    alert('Function in main window was triggered!');
-  };
-
-  return (
-    <div>
-      <button onClick={() => setShowPopout(true)}>Open Popout</button>
-
-      {showPopout && (
-        <PopoutWindow onClose={() => setShowPopout(false)} title="My Popout">
-          <MyComponent onDoSomething={handleAction} />
-        </PopoutWindow>
-      )}
-    </div>
-  );
-};
-
-const MyComponent = ({ onDoSomething }: { onDoSomething: () => void }) => (
-  <div>
-    <h2>This is a popout component</h2>
-    <button onClick={onDoSomething}>Trigger Main Window Function</button>
-  </div>
-);
