@@ -1,22 +1,102 @@
-<div class="container" id="container">
-  <div class="section" id="section-1">
-    Section 1 <button onclick="showPreview('section-1')">Show Preview</button>
-  </div>
-  <div class="section" id="section-2">
-    Section 2 <button onclick="showPreview('section-2')">Show Preview</button>
-  </div>
-  <div class="section" id="section-3">
-    Section 3 <button onclick="showPreview('section-3')">Show Preview</button>
-  </div>
-  <div class="section" id="section-4">
-    Section 4
-  </div>
-</div>
+import React, { useRef, useState, useEffect } from 'react';
+import './PreviewLayout.css';
 
-<div class="preview" id="preview-box">
-  <button class="close-preview" onclick="hidePreview()">×</button>
-  <div class="preview-content">Preview Content</div>
-</div>
+const sectionsData = [
+  'Section 1',
+  'Section 2',
+  'Section 3',
+  'Section 4',
+  'Section 5',
+];
+
+const PreviewLayout = () => {
+  const containerRef = useRef(null);
+  const sectionRefs = useRef([]);
+  const previewRef = useRef(null);
+
+  const [previewIndex, setPreviewIndex] = useState(null);
+  const [previewStyle, setPreviewStyle] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Update mobile flag on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const showPreview = (index) => {
+    setPreviewIndex(index);
+
+    if (!isMobile && containerRef.current && sectionRefs.current.length) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const sectionRect = sectionRefs.current[index].getBoundingClientRect();
+
+      // Calculate offsetTop relative to container + scroll
+      const offsetTop = sectionRect.top - containerRect.top + window.scrollY;
+
+      // Sum height of current + next 2 sections
+      let height = 0;
+      for (let i = index; i < index + 3 && i < sectionRefs.current.length; i++) {
+        height += sectionRefs.current[i].offsetHeight + 10;
+      }
+
+      const left = containerRect.left + containerRef.current.offsetWidth + 20;
+
+      setPreviewStyle({
+        position: 'absolute',
+        top: `${offsetTop}px`,
+        left: `${left}px`,
+        height: `${height}px`,
+        display: 'block',
+        width: '40%',
+      });
+    } else {
+      // For mobile
+      setPreviewStyle({
+        position: 'static',
+        display: 'block',
+        width: '100%',
+        height: 'auto',
+      });
+    }
+  };
+
+  const hidePreview = () => {
+    setPreviewIndex(null);
+    setPreviewStyle({ display: 'none' });
+  };
+
+  return (
+    <div>
+      <div className="container" ref={containerRef}>
+        {sectionsData.map((title, index) => (
+          <div
+            key={index}
+            className="section"
+            ref={(el) => (sectionRefs.current[index] = el)}
+          >
+            {title}
+            <button onClick={() => showPreview(index)}>Show Preview</button>
+          </div>
+        ))}
+      </div>
+
+      {previewIndex !== null && (
+        <div className="preview" ref={previewRef} style={previewStyle}>
+          <button className="close-preview" onClick={hidePreview}>×</button>
+          <div className="preview-content">
+            Preview for: <strong>{sectionsData[previewIndex]}</strong>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PreviewLayout;
 body {
   margin: 0;
   padding: 0;
@@ -37,15 +117,16 @@ body {
   position: relative;
 }
 
+.section button {
+  margin-left: 20px;
+}
+
 .preview {
-  position: absolute;
-  width: 40%;
   background: #d0e6ff;
   border: 1px solid #90caff;
   border-radius: 4px;
   padding: 20px;
   box-sizing: border-box;
-  display: none;
   z-index: 10;
 }
 
@@ -59,52 +140,14 @@ body {
   cursor: pointer;
 }
 
-/* ✅ Mobile: show preview stacked below */
+/* Mobile responsive layout */
 @media (max-width: 768px) {
   .preview {
-    position: static;
-    width: 100%;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
     margin-top: 10px;
   }
 }
-function showPreview(sectionId) {
-  const section = document.getElementById(sectionId);
-  const preview = document.getElementById('preview-box');
-  const container = document.getElementById('container');
-  const allSections = Array.from(document.querySelectorAll('.section'));
 
-  const sectionRect = section.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
-
-  // Compute top offset (accounting for scroll)
-  const topOffset = sectionRect.top - containerRect.top + window.scrollY;
-
-  // Compute preview height (3 sections)
-  const index = allSections.indexOf(section);
-  let height = 0;
-  for (let i = index; i < index + 3 && i < allSections.length; i++) {
-    height += allSections[i].offsetHeight + 10; // include margin
-  }
-
-  // Apply styles
-  if (window.innerWidth > 768) {
-    // Desktop layout
-    preview.style.position = 'absolute';
-    preview.style.display = 'block';
-    preview.style.top = `${topOffset}px`;
-    preview.style.left = `${containerRect.left + container.offsetWidth + 20}px`;
-    preview.style.height = `${height}px`;
-  } else {
-    // Mobile: stack below
-    preview.style.position = 'static';
-    preview.style.width = '100%';
-    preview.style.display = 'block';
-    preview.style.height = 'auto';
-  }
-}
-
-function hidePreview() {
-  const preview = document.getElementById('preview-box');
-  preview.style.display = 'none';
-}
 
