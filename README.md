@@ -1,37 +1,121 @@
+import Step from "./Step";
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
+export default function Stepper() {
+  return (
+    <div style={{ display: "flex", gap: "24px" }}>
+      <Step
+        label="1. Alpha"
+        status="incomplete"
+        content="Pending initial setup"
+      />
 
-public class AESUtil {
+      <Step
+        label="2. Beta"
+        status="complete"
+        content="All checks passed"
+      />
 
-    private static final String KEY = "1234567890123456"; // 16 chars
-    private static final String IV  = "abcdefghijklmnop"; // 16 chars
+      <Step
+        label="3. Gamma"
+        status="in-progress"
+        content="Currently running"
+      />
 
-    public static String decrypt(String encrypted) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+      <Step
+        label="4. Delta"
+        status="not-started"
+      />
+    </div>
+  );
+}
 
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
+.step {
+  display: flex;
+  align-items: flex-start;
+  color: #fff;
+  font-family: sans-serif;
+}
 
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+.step-indicator {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
 
-        byte[] decoded = Base64.getDecoder().decode(encrypted);
-        byte[] original = cipher.doFinal(decoded);
+.step-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6b7280;
+  z-index: 1;
+}
 
-        return new String(original, "UTF-8");
-    }
+.step-line {
+  height: 2px;
+  width: 120px;
+  background: #6b7280;
+  margin-left: 6px;
+}
 
-    public static String encrypt(String text) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+.step-label {
+  font-weight: 600;
+}
 
-        SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes("UTF-8"), "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(IV.getBytes("UTF-8"));
+.step-status {
+  font-size: 12px;
+  margin-top: 2px;
+}
 
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+/* Status colors */
+.step-complete .step-dot,
+.step-complete .step-line {
+  background: #22c55e;
+}
 
-        byte[] encrypted = cipher.doFinal(text.getBytes("UTF-8"));
-        return Base64.getEncoder().encodeToString(encrypted);
-    }
+.step-progress .step-dot,
+.step-progress .step-line {
+  background: #3b82f6;
+}
+
+.step-incomplete .step-dot,
+.step-incomplete .step-line {
+  background: #ef4444;
+}
+
+.step-not-started .step-dot,
+.step-not-started .step-line {
+  background: #9ca3af;
+}
+
+.step-content {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+import React from "react";
+import "./step.css";
+
+const STATUS_CLASS = {
+  complete: "step-complete",
+  incomplete: "step-incomplete",
+  "in-progress": "step-progress",
+  "not-started": "step-not-started",
+};
+
+export default function Step({ label, status, content }) {
+  return (
+    <div className={`step ${STATUS_CLASS[status]}`}>
+      <div className="step-indicator">
+        <span className="step-dot" />
+        <span className="step-line" />
+      </div>
+
+      <div className="step-info">
+        <div className="step-label">{label}</div>
+        <div className="step-status">{status.replace("-", " ")}</div>
+        {content && <div className="step-content">{content}</div>}
+      </div>
+    </div>
+  );
 }
