@@ -1,19 +1,17 @@
-const resizeColumns = (
-  params: GridSizeChangedEvent | FirstDataRenderedEvent
-): void => {
-  const gridDiv = document.querySelector(
-    '.ag-body-viewport'
-  ) as HTMLElement | null;
+function groupArray(data: any[]) {
+  const map: Record<string, any[]> = {};
 
-  if (!gridDiv) return;
+  for (const item of data) {
+    const groupKey = `${item.type}_${item.status}`;
 
-  const gridWidth = gridDiv.clientWidth;
+    if (!map[groupKey]) {
+      map[groupKey] = [];
+    }
+    map[groupKey].push(item);
+  }
 
-  const totalColumnWidth = params.columnApi
-    .getAllDisplayedColumns()
-    .reduce((sum, col) => sum + col.getActualWidth(), 0);
-
-  totalColumnWidth > gridWidth
-    ? params.columnApi.autoSizeAllColumns(false)
-    : params.api.sizeColumnsToFit();
-};
+  return Object.entries(map).map(([group, items]) => ({
+    group,
+    items
+  }));
+}
