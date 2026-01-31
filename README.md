@@ -13,4 +13,3 @@
   <rect x="70" y="90" 
         transform="rotate(45 80 100)" 
         fill="#FF9800" width="40" height="40"/>
-</svg> 
